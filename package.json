@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "": "link:/",
     "gray-matter": "^4.0.3",
     "next": "15.5.4",
     "next-intl": "^4.3.9",
