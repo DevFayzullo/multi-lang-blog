@@ -371,4 +371,4 @@ export default function LocaleSwitcher() {
 - README (EN + KO) with screenshots
 - Sample posts: 2 per locale (total 6)
 - Lighthouse report screenshot
-- CI passing badge
+- CI passing badge.
