@@ -8,7 +8,7 @@ export default async function HomePage() {
       <h1 className="text-3xl font-semibold">{t('title')}</h1>
       <p className="mt-2 text-neutral-600 dark:text-neutral-400">{t('desc')}</p>
       <div className="mt-6">
-        <Link href="./blog" className="underline">Blog →</Link>
+        <Link href="/blog" className="underline">Blog →</Link>
       </div>
     </main>
   );
