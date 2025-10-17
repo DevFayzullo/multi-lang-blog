@@ -14,4 +14,4 @@ export default getRequestConfig(async ({ locale }) => {
     const messages = (await import(`./messages/${FALLBACK}.json`)).default;
     return { locale: FALLBACK, messages };
   }
-});
+});gg
