@@ -12,6 +12,7 @@ export default async function RootLayout({
     <html lang={locale} suppressHydrationWarning>
       <body className="min-h-screen bg-white text-gray-900 dark:bg-neutral-900 dark:text-neutral-100">
         {children}
+        <h1>Hi</h1>
       </body>
     </html>
   );
