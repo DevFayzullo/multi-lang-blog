@@ -1,5 +1,6 @@
 {
   "common": { "siteName": "Ko‘p tilli blog" },
-  "home": { "title": "Xush kelibsiz", "desc": "TypeScript + Next.js orqali tayyorlangan ko‘p tilli blog" },
-  "nav": { "home": "Bosh sahifa", "blog": "Blog" }
+  "home": { "title": "Xush kelibsiz", "desc": "TypeScript + Next.js asosidagi ko‘p tilli blog" },
+  "nav": { "home": "Bosh sahifa", "blog": "Blog" },
+  "blog": { "title": "Blog", "empty": "Hozircha postlar yo‘q." }
 }

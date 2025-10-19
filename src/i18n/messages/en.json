@@ -1,5 +1,7 @@
 {
   "common": { "siteName": "Multi-Language Blog" },
   "home": { "title": "Welcome", "desc": "TypeScript + Next.js multi-language blog" },
-  "nav": { "home": "Home", "blog": "Blog" }
+  "nav": { "home": "Home", "blog": "Blog" },
+  "blog": { "title": "Blog", "empty": "No posts yet." }
 }
+

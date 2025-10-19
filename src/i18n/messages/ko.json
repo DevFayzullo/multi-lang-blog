@@ -1,5 +1,6 @@
 {
   "common": { "siteName": "다국어 블로그" },
   "home": { "title": "환영합니다", "desc": "TypeScript + Next.js 다국어 블로그" },
-  "nav": { "home": "홈", "blog": "블로그" }
+  "nav": { "home": "홈", "blog": "블로그" },
+  "blog": { "title": "블로그", "empty": "아직 게시물이 없습니다." }
 }
