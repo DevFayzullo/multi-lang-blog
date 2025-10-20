@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPostBySlug } from '@/lib/posts';
 import type { Locale } from '@/lib/types';
 import { Mdx } from '@/lib/mdx';
+import { altLocales } from '@/lib/seo';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
