@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import matter from 'gray-matter';
 import { notFound } from 'next/navigation';
-import { getPostBySlug } from '@/src/lib/posts';
-import type { Locale } from '@/src/lib/types';
-import { Mdx } from '@/src/lib/mdx';
+import { getPostBySlug } from '@/lib/posts';
+import type { Locale } from '@/lib/types';
+import { Mdx } from '@/lib/mdx';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
