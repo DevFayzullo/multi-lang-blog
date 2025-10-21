@@ -1,5 +1,6 @@
 import LocaleSwitcher from './LocaleSwitcher';
 import Link from 'next/link';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
   return (
@@ -8,6 +9,7 @@ export default function Header() {
         <Link href="/ko" className="font-semibold">Multi-Lang Blog</Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/ko/blog" className="hover:underline">Blog</Link>
+          <ThemeToggle />
           <LocaleSwitcher />
         </nav>
       </div>

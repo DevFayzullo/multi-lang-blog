@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { ThemeProvider } from 'next-themes';
 
 export function generateStaticParams() {
   return [{ locale: 'ko' }, { locale: 'en' }, { locale: 'uz' }];
@@ -19,12 +20,14 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className="min-h-screen bg-white text-gray-900 dark:bg-neutral-900 dark:text-neutral-100">
+  <html lang={locale} suppressHydrationWarning>
+    <body className="min-h-screen bg-white text-gray-900 dark:bg-neutral-900 dark:text-neutral-100">
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Seoul">
           {children}
         </NextIntlClientProvider>
-      </body>
-    </html>
-  );
+      </ThemeProvider>
+    </body>
+  </html>
+);
 }
