@@ -3,8 +3,12 @@ import { getAllPosts } from '@/lib/posts';
 import type { Locale } from '@/lib/types';
 import PostCard from '@/components/blog/PostCard';
 
-export default async function BlogIndex({ params }: { params: Promise<{ locale: Locale }> }) {
-  const { locale } = await params;
+export default async function BlogIndex({
+    params,
+  }: {
+  params: Promise<{ locale: Locale }>;
+  }) {
+  const { locale } = await params;   
   const posts = await getAllPosts(locale);
 
   return (

@@ -15,11 +15,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 
 export default async function PostPage({
-  params
+  params,
 }: {
   params: Promise<{ locale: Locale; slug: string }>;
 }) {
-  const { locale, slug } = await params;
+  const { locale, slug } = await params;  
   const meta = await getPostBySlug(locale, slug);
   if (!meta) return notFound();
 
