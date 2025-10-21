@@ -6,11 +6,9 @@ import type { Locale } from '@/lib/types';
 import { Mdx } from '@/lib/mdx';
 import { altLocales } from '@/lib/seo';
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{locale: string; slug: string}> }) {
   const { locale, slug } = await params;
-  const title = `Blog — ${slug}`;
-  const alternates = { ...altLocales(locale, `/blog/${slug}`) };
-  return { title, alternates };
+  return { title: `Blog — ${slug}`, alternates: altLocales(locale, `/blog/${slug}`) };
 }
 
 
