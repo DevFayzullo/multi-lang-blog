@@ -2,40 +2,7 @@
 title: "TypeScript generics in practice"
 date: "2025-10-18"
 slug: "ts-generics-practice"
-summary: "A practical guide to TypeScript generics with patterns used in production."
-tags: ["typescript", "generics"]
+summary: "A practical guide to TS generics."
+tags: ["typescript","generics"]
 lang: "en"
 ---
-
-# Generics in practice
-
-We cover common patterns like `Result<T, E>`, `Repository<T>`, and more.
-
-````ts
-export type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E };
-
----
-
-# 2) TypeScript tiplari
-
-**`src/lib/types.ts`**
-```ts
-export type Locale = 'ko' | 'en' | 'uz';
-
-export interface PostFrontmatter {
-  title: string;
-  date: string;        // ISO
-  slug: string;        // unique per-locale
-  summary?: string;
-  tags?: string[];
-  cover?: string;
-  draft?: boolean;
-  lang: Locale;
-}
-
-export interface PostMeta extends PostFrontmatter {
-  words: number;
-  readingTime: number; // minutes
-  filepath: string;    // absolute path
-}
-````

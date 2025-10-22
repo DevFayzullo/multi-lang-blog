@@ -2,7 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 
 export function generateStaticParams() {
-  return [{locale: 'ko'}, {locale: 'en'}, {locale: 'uz'}];
+  return [{ locale: 'ko' }, { locale: 'en' }, { locale: 'uz' }];
 }
 
 export default async function LocaleLayout({
@@ -10,19 +10,17 @@ export default async function LocaleLayout({
   params
 }: {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;   // ✅ MUHIM
+  const { locale } = await params;
   setRequestLocale(locale);
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className="min-h-screen">
-        <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Seoul">
-          {children}
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <>
+      <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Seoul">
+        {children}
+      </NextIntlClientProvider>
+    </>
   );
 }

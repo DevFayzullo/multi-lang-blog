@@ -50,13 +50,12 @@ export async function getAllPosts(locale: Locale): Promise<PostMeta[]> {
       const src = await fs.readFile(filepath, 'utf8');
       const { data, content } = matter(src);
       const fm = fmSchema.parse({ ...data, lang: locale });
-
       const words = content.trim().split(/\s+/).filter(Boolean).length;
-      const readingTime = Math.max(1, Math.round(words / 200));
-
-      out.push({ ...fm, words, readingTime, filepath });
-    } catch (err) {
-      console.error(`❌ Error parsing ${f}:`, err);
+    const readingTime = Math.max(1, Math.round(words / 200));
+    out.push({ ...fm, words, readingTime, filepath });
+    }catch (err) {
+    console.warn(`⚠️ Skip invalid frontmatter: ${filepath}`);
+    console.warn(err);
     }
   }
 
