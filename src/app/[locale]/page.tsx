@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { altLocales } from '@/lib/seo'; 
 
 export async function generateMetadata({
   params
@@ -7,7 +8,9 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   return {
-    title: locale === 'ko' ? '홈' : 'Home'
+    title: 'Home',
+    description: 'TypeScript + Next.js multi-language blog',
+    alternates: altLocales(locale, '')
   };
 }
 
