@@ -1,8 +1,9 @@
 import createMiddleware from 'next-intl/middleware';
-import nextIntlConfig from './next-intl.config';
 
-export default createMiddleware(nextIntlConfig);
+export default createMiddleware({
+  locales: ['ko','en','uz'],
+  defaultLocale: 'ko',
+  localePrefix: 'always'
+});
 
-export const config = {
-  matcher: ['/((?!api|_next|.*\\..*).*)']
-};
+export const config = { matcher: ['/((?!_next|.*\\..*$).*)'] };
