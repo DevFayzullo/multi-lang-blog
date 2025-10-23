@@ -1,3 +1,5 @@
+'use client'
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import type { PostMeta } from '@/lib/types';
 import type { Locale } from '@/lib/types';
@@ -9,7 +11,11 @@ type Props = {
 
 export default function PostCard({ locale, post }: Props) {
   return (
-    <li className="border-b pb-4">
+    <motion.li initial={{ opacity: 0, y: 8 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: 0.25 }}
+    className="border-b pb-4">
       <Link className="text-lg font-medium underline" href={`/${locale}/blog/${post.slug}`}>
         {post.title}
       </Link>
@@ -26,6 +32,6 @@ export default function PostCard({ locale, post }: Props) {
           ))}
         </div>
       ) : null}
-    </li>
+    </motion.li>
   );
 }

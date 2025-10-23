@@ -3,11 +3,15 @@ import typography from '@tailwindcss/typography'
 
 export default {
   content: [
-    './app/**/*.{ts,tsx,mdx}',
-    './src/**/*.{ts,tsx,mdx}',
-    './components/**/*.{ts,tsx,mdx}',
-    './content/**/*.{md,mdx}',
+    './src/app/**/*.{ts,tsx,mdx}',
+    './src/components/**/*.{ts,tsx,mdx}',
+    './src/content/**/*.{md,mdx}',
   ],
-  theme: { extend: {} },
+  theme: {
+    extend: {
+      container: { center: true, padding: '1rem' },
+      colors: { brand: { 500: '#3b82f6' } },
+    },
+  },
   plugins: [typography],
 } satisfies Config
