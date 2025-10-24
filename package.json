@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@vercel/og": "^0.8.5",
     "framer-motion": "^12.23.24",
     "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
