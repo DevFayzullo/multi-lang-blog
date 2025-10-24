@@ -5,11 +5,7 @@ import PostCard from '@/components/blog/PostCard';
 import type { PostMeta } from '@/lib/types';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
-type Props = {
-  locale: string;
-  posts: PostMeta[];
-  allTags: string[];
-};
+type Props = { locale: string; posts: PostMeta[]; allTags: string[] };
 
 export default function BlogIndexClient({ locale, posts, allTags }: Props) {
   const searchParams = useSearchParams();
@@ -26,14 +22,13 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
     const sp = new URLSearchParams();
     if (q) sp.set('q', q);
     if (tag) sp.set('tag', tag);
-    const query = sp.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
+    router.replace(sp.size ? `${pathname}?${sp.toString()}` : pathname);
   }, [q, tag, pathname, router]);
 
-  const fuse = useMemo(
-    () => new Fuse(posts, { keys: ['title', 'summary', 'tags'], threshold: 0.35 }),
-    [posts]
-  );
+  const fuse = useMemo(() => new Fuse(posts, {
+    keys: ['title', 'summary', 'tags'],
+    threshold: 0.35
+  }), [posts]);
 
   const filtered = useMemo(() => {
     const base = q ? fuse.search(q).map(r => r.item) : posts;
@@ -52,7 +47,7 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setTag('')}
-            className={`px-2 py-1 rounded-xl text-xs border ${!tag ? 'bg-neutral-800 text-white dark:bg-white dark:text-black' : 'border-neutral-300/70 dark:border-neutral-700/70'}`}
+            className={`px-2 py-1 rounded-xl text-xs border ${!tag ? 'bg-neutral-900 text-white dark:bg-white dark:text-black' : 'border-neutral-300/70 dark:border-neutral-700/70'}`}
           >
             All
           </button>
@@ -60,7 +55,7 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
             <button
               key={t}
               onClick={() => setTag(tag === t ? '' : t)}
-              className={`px-2 py-1 rounded-xl text-xs border ${tag === t ? 'bg-neutral-800 text-white dark:bg-white dark:text-black' : 'border-neutral-300/70 dark:border-neutral-700/70'}`}
+              className={`px-2 py-1 rounded-xl text-xs border ${tag === t ? 'bg-neutral-900 text-white dark:bg-white dark:text-black' : 'border-neutral-300/70 dark:border-neutral-700/70'}`}
             >
               #{t}
             </button>
@@ -73,7 +68,9 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
       </ul>
 
       {!filtered.length && (
-        <p className="mt-8 text-neutral-500">No results{q ? ` for “${q}”` : ''}{tag ? ` in #${tag}` : ''}.</p>
+        <p className="mt-8 text-neutral-500">
+          No results{q ? ` for “${q}”` : ''}{tag ? ` in #${tag}` : ''}.
+        </p>
       )}
     </section>
   );
