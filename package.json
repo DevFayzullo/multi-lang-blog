@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint"
+    
   },
   "dependencies": {
     "@vercel/og": "^0.8.5",
