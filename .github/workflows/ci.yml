@@ -7,23 +7,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node & pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
+      # Setup Node first, then pnpm
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Debug: show versions & package.json
+        run: |
+          node --version
+          pnpm --version
+          echo "root package.json scripts:"
+          jq '.scripts' package.json || cat package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: pnpm typecheck
+        run: pnpm run typecheck
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm run lint
 
       - name: Test build
-        run: pnpm build
+        run: pnpm run build
