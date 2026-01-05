@@ -1,15 +1,16 @@
 {
   "name": "multi-lang-blog",
   "version": "0.1.0",
+  "packageManager": "pnpm@9.15.0",
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
+    "build:turbopack": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
-    
-  },
+    "lint": "next lint"
+  },  
   "dependencies": {
     "@vercel/og": "^0.8.5",
     "framer-motion": "^12.23.24",
