@@ -1,17 +1,14 @@
-import { getRequestConfig } from 'next-intl/server';
+import {getRequestConfig} from 'next-intl/server';
 
 const SUPPORTED = ['ko', 'en', 'uz'] as const;
-const FALLBACK = 'en' as const;
+type Locale = (typeof SUPPORTED)[number];
 
-export default getRequestConfig(async ({ locale }) => {
-  const normalized =
-    (locale && SUPPORTED.includes(locale as any) ? locale : FALLBACK) as typeof SUPPORTED[number];
+const FALLBACK: Locale = 'ko';
 
-  try {
-    const messages = (await import(`./messages/${normalized}.json`)).default;
-    return { locale: normalized, messages };
-  } catch {
-    const messages = (await import(`./messages/${FALLBACK}.json`)).default;
-    return { locale: FALLBACK, messages };
-  }
+export default getRequestConfig(async ({locale}) => {
+  const normalized: Locale =
+    SUPPORTED.includes(locale as Locale) ? (locale as Locale) : FALLBACK;
+
+  const messages = (await import(`./messages/${normalized}.json`)).default;
+  return {locale: normalized, messages};
 });
