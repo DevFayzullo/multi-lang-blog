@@ -6,14 +6,16 @@ import type { Locale, PostMeta } from './types';
 
 const fmSchema = z.object({
   title: z.string().min(3),
-  date: z.string(), 
+  date: z.string(),
   slug: z.string().min(1),
   summary: z.string().optional(),
+  description: z.string().optional(),    
   tags: z.array(z.string()).optional(),
   cover: z.string().optional(),
-  draft: z.boolean().default(false),
+  draft: z.coerce.boolean().optional().default(false), 
   lang: z.enum(['ko', 'en', 'uz']),
 });
+
 
 function getContentDir(): string {
   const cwd = process.cwd();

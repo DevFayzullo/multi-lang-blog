@@ -5,6 +5,7 @@ export interface PostFrontmatter {
   date: string;        // ISO format (e.g. 2025-10-19)
   slug: string;        // URL segment (unique per locale)
   summary?: string;
+  description?: string;
   tags?: string[];
   cover?: string;      // optional image path
   draft?: boolean;     // true => hidden in production
