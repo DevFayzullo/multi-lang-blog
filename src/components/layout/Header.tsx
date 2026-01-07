@@ -18,7 +18,7 @@ export default function Header() {
         transition={{ duration: 0.35 }}
         className="border-b border-neutral-200/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-950/40 backdrop-blur supports-[backdrop-filter]:bg-white/40 dark:supports-[backdrop-filter]:bg-neutral-950/30"
       >
-        <div className="container max-w-5xl flex items-center justify-between py-3">
+        <div className="mx-auto w-full max-w-5xl px-6 flex items-center justify-between py-3">
           <Link href={`/${locale}`} className="font-semibold tracking-tight text-lg">
             <span className="mr-2">🌐</span> Multi-Lang Blog
           </Link>

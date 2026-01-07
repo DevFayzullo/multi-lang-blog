@@ -1,11 +1,11 @@
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { ThemeProvider } from 'next-themes';
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { ThemeProvider } from "next-themes";
 
-const LOCALES = ['ko', 'en', 'uz'] as const;
+const LOCALES = ["ko", "en", "uz"] as const;
 type Locale = (typeof LOCALES)[number];
 
 export function generateStaticParams() {
@@ -14,7 +14,7 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
   params: Promise<{ locale: Locale }>;
@@ -28,10 +28,20 @@ export default async function LocaleLayout({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Seoul">
-        <Header />
-        <main className="container max-w-5xl px-4">{children}</main>
-        <Footer />
+      <NextIntlClientProvider
+        messages={messages}
+        locale={locale}
+        timeZone="Asia/Seoul"
+      >
+        <div className="min-h-dvh flex flex-col">
+          <Header />
+
+          <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+            {children}
+          </main>
+
+          <Footer />
+        </div>
       </NextIntlClientProvider>
     </ThemeProvider>
   );
