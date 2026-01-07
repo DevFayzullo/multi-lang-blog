@@ -6,30 +6,26 @@ import type { Locale, PostMeta } from './types';
 
 const fmSchema = z.object({
   title: z.string().min(3),
-  date: z.string(),
+  date: z.string().min(1),
   slug: z.string().min(1),
   summary: z.string().optional(),
-  description: z.string().optional(),    
+  description: z.string().optional(), 
   tags: z.array(z.string()).optional(),
   cover: z.string().optional(),
   draft: z.coerce.boolean().optional().default(false), 
-  lang: z.enum(['ko', 'en', 'uz']),
+  lang: z.enum(['ko', 'en', 'uz'])
 });
-
 
 function getContentDir(): string {
   const cwd = process.cwd();
-  const candidates = [
-    path.join(cwd, 'src', 'content'),
-    path.join(cwd, 'content'),
-  ];
+  const candidates = [path.join(cwd, 'src', 'content'), path.join(cwd, 'content')];
 
   for (const candidate of candidates) {
     try {
       require('fs').accessSync(candidate);
       return candidate;
     } catch {
-      // skip if not found
+      // skip
     }
   }
 
@@ -37,7 +33,7 @@ function getContentDir(): string {
   return path.join(cwd, 'content');
 }
 
-const CONTENT_DIR = getContentDir()
+const CONTENT_DIR = getContentDir();
 
 export async function getAllPosts(locale: Locale): Promise<PostMeta[]> {
   const dir = path.join(CONTENT_DIR, locale, 'posts');
@@ -51,13 +47,16 @@ export async function getAllPosts(locale: Locale): Promise<PostMeta[]> {
     try {
       const src = await fs.readFile(filepath, 'utf8');
       const { data, content } = matter(src);
+
       const fm = fmSchema.parse({ ...data, lang: locale });
-      const words = content.trim().split(/\s+/).filter(Boolean).length;
-    const readingTime = Math.max(1, Math.round(words / 200));
-    out.push({ ...fm, words, readingTime, filepath });
-    }catch (err) {
-    console.warn(`⚠️ Skip invalid frontmatter: ${filepath}`);
-    console.warn(err);
+
+      const words = content.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+      const readingTime = Math.max(1, Math.round(words / 200));
+
+      out.push({ ...fm, words, readingTime, filepath });
+    } catch (err) {
+      console.warn(`⚠️ Skip invalid frontmatter: ${filepath}`);
+      console.warn(err);
     }
   }
 

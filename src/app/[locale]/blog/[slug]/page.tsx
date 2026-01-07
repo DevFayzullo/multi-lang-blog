@@ -4,14 +4,18 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import type { Locale } from '@/lib/types';
-import { getPostBySlug } from '@/lib/posts';
+import { getAllPosts, getPostBySlug } from '@/lib/posts';
 import { Mdx } from '@/lib/mdx';
 import { altLocales } from '@/lib/seo';
 import ReadingProgress from '@/components/blog/ReadingProgress';
 
 function formatDate(date: string, locale: Locale) {
   const map: Record<Locale, string> = { ko: 'ko-KR', en: 'en-US', uz: 'uz-UZ' };
-  return new Date(date).toLocaleDateString(map[locale] ?? 'en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  return new Date(date).toLocaleDateString(map[locale] ?? 'en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit'
+  });
 }
 
 export async function generateMetadata({
@@ -25,7 +29,7 @@ export async function generateMetadata({
   if (!meta) return { title: 'Post not found' };
 
   const title = meta.title;
-  const description = meta.description ?? 'Multi-language blog post';
+  const description = (meta as any).description ?? meta.summary ?? 'Multi-language blog post';
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
   const og = new URL(`/${locale}/og`, base);
@@ -59,8 +63,19 @@ export default async function PostPage({
   const meta = await getPostBySlug(locale, slug);
   if (!meta) return notFound();
 
+  // Prev/Next (based on sorted desc list)
+  const posts = await getAllPosts(locale);
+  const idx = posts.findIndex((p) => p.slug === slug);
+  const prev = idx >= 0 ? posts[idx + 1] ?? null : null; // older
+  const next = idx >= 0 ? posts[idx - 1] ?? null : null; // newer
+
   const src = await fs.readFile(meta.filepath, 'utf8');
   const { content } = matter(src);
+
+  const subtitle = (meta as any).description ?? meta.summary;
+
+  const shareUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`;
+  const shareTitle = meta.title;
 
   return (
     <>
@@ -97,9 +112,9 @@ export default async function PostPage({
               {meta.title}
             </h1>
 
-            {meta.description ? (
+            {subtitle ? (
               <p className="mt-3 max-w-3xl text-base leading-relaxed text-neutral-600 dark:text-neutral-400">
-                {meta.description}
+                {subtitle}
               </p>
             ) : null}
 
@@ -127,31 +142,39 @@ export default async function PostPage({
           </article>
 
           {/* Sidebar */}
-          <aside className="lg:sticky lg:top-24 h-fit space-y-4">
+          <aside className="h-fit space-y-4 lg:sticky lg:top-24">
+            {/* Details */}
             <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
               <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
                 Details
               </h2>
+
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-neutral-600 dark:text-neutral-400">Locale</dt>
-                  <dd className="font-medium text-neutral-900 dark:text-neutral-100">{locale.toUpperCase()}</dd>
+                  <dd className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {locale.toUpperCase()}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-neutral-600 dark:text-neutral-400">Date</dt>
-                  <dd className="font-medium text-neutral-900 dark:text-neutral-100">{formatDate(meta.date, locale)}</dd>
+                  <dd className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {formatDate(meta.date, locale)}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-neutral-600 dark:text-neutral-400">Reading</dt>
-                  <dd className="font-medium text-neutral-900 dark:text-neutral-100">{meta.readingTime} min</dd>
+                  <dd className="font-medium text-neutral-900 dark:text-neutral-100">
+                    {meta.readingTime} min
+                  </dd>
                 </div>
               </dl>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <a
                   className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(meta.title)}&url=${encodeURIComponent(
-                    `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(
+                    shareUrl
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -160,9 +183,7 @@ export default async function PostPage({
                 </a>
                 <a
                   className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                    `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`
-                  )}`}
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -171,14 +192,56 @@ export default async function PostPage({
               </div>
             </div>
 
-            <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-              <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-                Next steps
-              </h2>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                If you want, we can add a Table of Contents (TOC) and “Previous/Next” navigation.
-              </p>
-            </div>
+            {/* Prev / Next */}
+            {(prev || next) && (
+              <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
+                <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                  Continue reading
+                </h2>
+
+                <div className="mt-4 grid gap-3">
+                  {next && (
+                    <Link
+                      href={`/${locale}/blog/${next.slug}`}
+                      className="group rounded-2xl border border-neutral-200/60 bg-white/70 p-4 text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-neutral-800/60 dark:bg-neutral-950/40"
+                    >
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Next</p>
+                      <p className="mt-1 line-clamp-2 font-medium tracking-tight text-neutral-900 dark:text-neutral-100">
+                        {next.title}
+                      </p>
+                      {next.summary ? (
+                        <p className="mt-1 line-clamp-2 text-xs text-neutral-600 dark:text-neutral-400">
+                          {next.summary}
+                        </p>
+                      ) : null}
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-500 group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
+                        Read <span aria-hidden="true">→</span>
+                      </span>
+                    </Link>
+                  )}
+
+                  {prev && (
+                    <Link
+                      href={`/${locale}/blog/${prev.slug}`}
+                      className="group rounded-2xl border border-neutral-200/60 bg-white/70 p-4 text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-neutral-800/60 dark:bg-neutral-950/40"
+                    >
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Previous</p>
+                      <p className="mt-1 line-clamp-2 font-medium tracking-tight text-neutral-900 dark:text-neutral-100">
+                        {prev.title}
+                      </p>
+                      {prev.summary ? (
+                        <p className="mt-1 line-clamp-2 text-xs text-neutral-600 dark:text-neutral-400">
+                          {prev.summary}
+                        </p>
+                      ) : null}
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-500 group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
+                        Read <span aria-hidden="true">→</span>
+                      </span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </aside>
         </section>
       </main>
