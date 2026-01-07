@@ -29,7 +29,7 @@ export async function generateMetadata({
   if (!meta) return { title: 'Post not found' };
 
   const title = meta.title;
-  const description = (meta as any).description ?? meta.summary ?? 'Multi-language blog post';
+  const description = meta.description ?? meta.summary ?? 'Multi-language blog post';
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
   const og = new URL(`/${locale}/og`, base);
@@ -72,7 +72,7 @@ export default async function PostPage({
   const src = await fs.readFile(meta.filepath, 'utf8');
   const { content } = matter(src);
 
-  const subtitle = (meta as any).description ?? meta.summary;
+  const subtitle = meta.description ?? meta.summary;
 
   const shareUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`;
   const shareTitle = meta.title;

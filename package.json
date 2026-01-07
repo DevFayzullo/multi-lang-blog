@@ -9,8 +9,8 @@
     "build": "next build",
     "build:turbopack": "next build --turbopack",
     "start": "next start",
-    "lint": "next lint"
-  },  
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --max-warnings=0"
+  },
   "dependencies": {
     "@vercel/og": "^0.8.5",
     "framer-motion": "^12.23.24",
@@ -28,7 +28,8 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^20",

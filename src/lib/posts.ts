@@ -3,6 +3,8 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import { z } from 'zod';
 import type { Locale, PostMeta } from './types';
+import { accessSync } from 'node:fs';
+
 
 const fmSchema = z.object({
   title: z.string().min(3),
@@ -22,7 +24,7 @@ function getContentDir(): string {
 
   for (const candidate of candidates) {
     try {
-      require('fs').accessSync(candidate);
+      accessSync(candidate);
       return candidate;
     } catch {
       // skip

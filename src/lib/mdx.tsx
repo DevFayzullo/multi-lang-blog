@@ -17,46 +17,13 @@ function slugify(input: string) {
     .replace(/-+/g, '-');
 }
 
-function CodeBlock({
-  children,
-  'data-language': lang
-}: React.HTMLAttributes<HTMLPreElement> & { 'data-language'?: string }) {
-  return (
-    <div className="group relative my-6 overflow-hidden rounded-2xl border border-neutral-200/60 bg-white/60 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-      <div className="flex items-center justify-between border-b border-neutral-200/50 px-4 py-2 text-xs text-neutral-600 dark:border-neutral-800/50 dark:text-neutral-300">
-        <span className="inline-flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-neutral-400/80 dark:bg-neutral-500/80" />
-          <span className="font-medium">{lang ?? 'code'}</span>
-        </span>
-
-        <CopyButton />
-      </div>
-
-      <pre className="m-0 overflow-x-auto p-4 text-[13px] leading-relaxed" data-language={lang}>
-        {children}
-      </pre>
-    </div>
-  );
-}
-
-// Must be client for clipboard
-function CopyButton() {
-  // inline client boundary
-  return (
-    <ClientCopyButton />
-  );
-}
-
-function ClientCopyButton() {
+function ClientCopyButton({ getText }: { getText: () => string }) {
   'use client';
   const [copied, setCopied] = React.useState(false);
 
   async function onCopy() {
     try {
-      // Find nearest <pre> then read its text
-      const pre = (document.activeElement as HTMLElement | null)?.closest?.('div')?.querySelector('pre');
-      const text = pre?.innerText ?? '';
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(getText());
       setCopied(true);
       window.setTimeout(() => setCopied(false), 900);
     } catch {
@@ -76,23 +43,56 @@ function ClientCopyButton() {
   );
 }
 
-function HeadingWithAnchor({
-  as: Tag,
+function CodeBlock(
+  props: React.ComponentPropsWithoutRef<'pre'> & { 'data-language'?: string }
+) {
+  const { children } = props;
+  const lang = props['data-language'];
+
+  const getText = () => {
+    if (typeof children === 'string') return children;
+    try {
+      return String(children ?? '');
+    } catch {
+      return '';
+    }
+  };
+
+  return (
+    <div className="group relative my-6 overflow-hidden rounded-2xl border border-neutral-200/60 bg-white/60 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
+      <div className="flex items-center justify-between border-b border-neutral-200/50 px-4 py-2 text-xs text-neutral-600 dark:border-neutral-800/50 dark:text-neutral-300">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-neutral-400/80 dark:bg-neutral-500/80" />
+          <span className="font-medium">{lang ?? 'code'}</span>
+        </span>
+
+        <ClientCopyButton getText={getText} />
+      </div>
+
+      <pre className="m-0 overflow-x-auto p-4 text-[13px] leading-relaxed" data-language={lang}>
+        {children}
+      </pre>
+    </div>
+  );
+}
+
+function HeadingAnchor({
+  level,
   children
 }: {
-  as: 'h2' | 'h3';
+  level: 2 | 3;
   children: React.ReactNode;
 }) {
-  const text = React.Children.toArray(children).join('').toString();
-  const id = slugify(text);
+  const text = React.Children.toArray(children)
+    .map((c) => (typeof c === 'string' ? c : ''))
+    .join('');
+  const id = slugify(text || 'section');
+
+  const Tag = level === 2 ? ('h2' as const) : ('h3' as const);
 
   return (
     <Tag id={id} className="group scroll-mt-24">
-      <a
-        href={`#${id}`}
-        className="no-underline"
-        aria-label="Anchor"
-      >
+      <a href={`#${id}`} className="no-underline" aria-label="Anchor">
         <span className="mr-2 inline-block opacity-0 transition group-hover:opacity-60">#</span>
       </a>
       {children}
@@ -101,15 +101,18 @@ function HeadingWithAnchor({
 }
 
 const mdxComponents = {
-  // Premium headings with anchors
-  h2: (props: any) => <HeadingWithAnchor as="h2" {...props} />,
-  h3: (props: any) => <HeadingWithAnchor as="h3" {...props} />,
+  h2: (props: React.ComponentPropsWithoutRef<'h2'>) => (
+    <HeadingAnchor level={2}>{props.children}</HeadingAnchor>
+  ),
+  h3: (props: React.ComponentPropsWithoutRef<'h3'>) => (
+    <HeadingAnchor level={3}>{props.children}</HeadingAnchor>
+  ),
 
-  // Code blocks: override pre
-  pre: (props: any) => <CodeBlock {...props} />,
+  pre: (props: React.ComponentPropsWithoutRef<'pre'> & { 'data-language'?: string }) => (
+    <CodeBlock {...props} />
+  ),
 
-  // Better inline code styling
-  code: (props: any) => (
+  code: (props: React.ComponentPropsWithoutRef<'code'>) => (
     <code
       {...props}
       className={[
@@ -121,8 +124,7 @@ const mdxComponents = {
     />
   ),
 
-  // Links
-  a: (props: any) => (
+  a: (props: React.ComponentPropsWithoutRef<'a'>) => (
     <a
       {...props}
       className={[
@@ -134,7 +136,7 @@ const mdxComponents = {
       rel={props.target === '_blank' ? 'noreferrer' : props.rel}
     />
   )
-};
+} satisfies Record<string, React.ComponentType<unknown>>;
 
 export function Mdx({ source }: { source: string }) {
   return (
