@@ -1,9 +1,9 @@
-import fs from "node:fs/promises";
-import * as fsSync from "node:fs";
-import path from "node:path";
-import matter from "gray-matter";
-import { z } from "zod";
-import type { Locale, PostMeta } from "./types";
+import fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
+import path from 'node:path';
+import matter from 'gray-matter';
+import { z } from 'zod';
+import type { Locale, PostMeta } from './types';
 
 const fmSchema = z.object({
   title: z.string().min(3),
@@ -20,8 +20,8 @@ const fmSchema = z.object({
 function getContentDir(): string {
   const cwd = process.cwd();
   const candidates = [
-    path.join(cwd, "src", "content"),
-    path.join(cwd, "content"),
+    path.join(cwd, 'src', 'content'),
+    path.join(cwd, 'content'),
   ];
 
   for (const candidate of candidates) {
@@ -29,15 +29,14 @@ function getContentDir(): string {
       fsSync.accessSync(candidate);
       return candidate;
     } catch {
-      // skip if not found
+      // not found, continue
     }
   }
 
-  console.warn(
-    "⚠️ No content folder found. Expected `src/content` or `content`."
-  );
-  return path.join(cwd, "content");
+  console.warn('⚠️ No content folder found. Expected `src/content` or `content`.');
+  return path.join(cwd, 'content');
 }
+
 
 const CONTENT_DIR = getContentDir();
 
