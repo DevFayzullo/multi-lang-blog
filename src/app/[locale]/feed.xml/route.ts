@@ -10,15 +10,14 @@ function isLocale(v: string): v is Locale {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { locale: string } }
+  { params }: { params: Promise<{ locale: string }> }
 ) {
-  const localeStr = params.locale;
+  const { locale: localeStr } = await params;
   const locale: Locale = isLocale(localeStr) ? localeStr : 'ko';
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
   const posts = await getAllPosts(locale);
-
   const items = posts
     .map((p) => {
       const url = `${base}/${locale}/blog/${encodeURIComponent(p.slug)}`;
