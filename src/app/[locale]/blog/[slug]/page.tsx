@@ -9,6 +9,10 @@ import { Mdx } from '@/lib/mdx';
 import { altLocales } from '@/lib/seo';
 import ReadingProgress from '@/components/blog/ReadingProgress';
 
+export const dynamicParams = false;
+
+const LOCALES: readonly Locale[] = ['ko', 'en', 'uz'];
+
 function formatDate(date: string, locale: Locale) {
   const map: Record<Locale, string> = { ko: 'ko-KR', en: 'en-US', uz: 'uz-UZ' };
   return new Date(date).toLocaleDateString(map[locale] ?? 'en-US', {
@@ -16,6 +20,16 @@ function formatDate(date: string, locale: Locale) {
     month: 'short',
     day: '2-digit'
   });
+}
+
+export async function generateStaticParams() {
+  const all = await Promise.all(
+    LOCALES.map(async (locale) => {
+      const posts = await getAllPosts(locale);
+      return posts.map((p) => ({ locale, slug: p.slug }));
+    })
+  );
+  return all.flat();
 }
 
 export async function generateMetadata({
@@ -63,19 +77,8 @@ export default async function PostPage({
   const meta = await getPostBySlug(locale, slug);
   if (!meta) return notFound();
 
-  // Prev/Next (based on sorted desc list)
-  const posts = await getAllPosts(locale);
-  const idx = posts.findIndex((p) => p.slug === slug);
-  const prev = idx >= 0 ? posts[idx + 1] ?? null : null; // older
-  const next = idx >= 0 ? posts[idx - 1] ?? null : null; // newer
-
   const src = await fs.readFile(meta.filepath, 'utf8');
   const { content } = matter(src);
-
-  const subtitle = meta.description ?? meta.summary;
-
-  const shareUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`;
-  const shareTitle = meta.title;
 
   return (
     <>
@@ -99,8 +102,8 @@ export default async function PostPage({
 
         {/* Header card */}
         <section className="relative overflow-hidden rounded-3xl border border-neutral-200/60 bg-white/60 p-8 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-          <div className="pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(60%_60%_at_50%_0%,black,transparent)]">
-            <div className="absolute -top-24 left-1/2 h-72 w-[46rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-neutral-200 to-neutral-100 blur-3xl dark:from-neutral-900 dark:to-neutral-950" />
+          <div className="pointer-events-none absolute inset-0 opacity-60 mask-[radial-gradient(60%_60%_at_50%_0%,black,transparent)]">
+            <div className="absolute -top-24 left-1/2 h-72 w-184 -translate-x-1/2 rounded-full bg-linear-to-r from-neutral-200 to-neutral-100 blur-3xl dark:from-neutral-900 dark:to-neutral-950" />
           </div>
 
           <div className="relative">
@@ -112,9 +115,9 @@ export default async function PostPage({
               {meta.title}
             </h1>
 
-            {subtitle ? (
+            {meta.description ? (
               <p className="mt-3 max-w-3xl text-base leading-relaxed text-neutral-600 dark:text-neutral-400">
-                {subtitle}
+                {meta.description}
               </p>
             ) : null}
 
@@ -142,13 +145,11 @@ export default async function PostPage({
           </article>
 
           {/* Sidebar */}
-          <aside className="h-fit space-y-4 lg:sticky lg:top-24">
-            {/* Details */}
+          <aside className="lg:sticky lg:top-24 h-fit space-y-4">
             <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
               <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
                 Details
               </h2>
-
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-neutral-600 dark:text-neutral-400">Locale</dt>
@@ -170,11 +171,11 @@ export default async function PostPage({
                 </div>
               </dl>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap gap-2">
                 <a
                   className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(
-                    shareUrl
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(meta.title)}&url=${encodeURIComponent(
+                    `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -183,7 +184,9 @@ export default async function PostPage({
                 </a>
                 <a
                   className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                    `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`
+                  )}`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -192,56 +195,14 @@ export default async function PostPage({
               </div>
             </div>
 
-            {/* Prev / Next */}
-            {(prev || next) && (
-              <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-                <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-                  Continue reading
-                </h2>
-
-                <div className="mt-4 grid gap-3">
-                  {next && (
-                    <Link
-                      href={`/${locale}/blog/${next.slug}`}
-                      className="group rounded-2xl border border-neutral-200/60 bg-white/70 p-4 text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-neutral-800/60 dark:bg-neutral-950/40"
-                    >
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Next</p>
-                      <p className="mt-1 line-clamp-2 font-medium tracking-tight text-neutral-900 dark:text-neutral-100">
-                        {next.title}
-                      </p>
-                      {next.summary ? (
-                        <p className="mt-1 line-clamp-2 text-xs text-neutral-600 dark:text-neutral-400">
-                          {next.summary}
-                        </p>
-                      ) : null}
-                      <span className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-500 group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
-                        Read <span aria-hidden="true">→</span>
-                      </span>
-                    </Link>
-                  )}
-
-                  {prev && (
-                    <Link
-                      href={`/${locale}/blog/${prev.slug}`}
-                      className="group rounded-2xl border border-neutral-200/60 bg-white/70 p-4 text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-neutral-800/60 dark:bg-neutral-950/40"
-                    >
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Previous</p>
-                      <p className="mt-1 line-clamp-2 font-medium tracking-tight text-neutral-900 dark:text-neutral-100">
-                        {prev.title}
-                      </p>
-                      {prev.summary ? (
-                        <p className="mt-1 line-clamp-2 text-xs text-neutral-600 dark:text-neutral-400">
-                          {prev.summary}
-                        </p>
-                      ) : null}
-                      <span className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-500 group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
-                        Read <span aria-hidden="true">→</span>
-                      </span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
+              <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                Next steps
+              </h2>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                If you want, we can add a Table of Contents (TOC) and “Previous/Next” navigation.
+              </p>
+            </div>
           </aside>
         </section>
       </main>
