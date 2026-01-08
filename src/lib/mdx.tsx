@@ -2,20 +2,12 @@ import React from 'react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
 import rehypePrettyCode from 'rehype-pretty-code';
+import { slugify } from './slug';
 
 const rehypePrettyCodeOptions = {
   theme: 'one-dark-pro',
   keepBackground: false
 };
-
-function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}\s-]/gu, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
-}
 
 function ClientCopyButton({ getText }: { getText: () => string }) {
   'use client';

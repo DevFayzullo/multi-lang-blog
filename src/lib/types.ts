@@ -4,16 +4,16 @@ export interface PostFrontmatter {
   title: string;
   date: string;        
   slug: string;       
-  summary?: string;    
-  description?: string; 
+  summary?: string;
+  description?: string;
   tags?: string[];
   cover?: string;     
-  draft?: boolean;    
+  draft?: boolean;     
   lang: Locale;
 }
 
 export interface PostMeta extends PostFrontmatter {
-  words: number;        
-  readingTime: number;  
-  filepath: string;     
+  words: number;
+  readingTime: number;
+  filepath: string;
 }
