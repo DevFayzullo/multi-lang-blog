@@ -11,28 +11,28 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 function BlogIndexSkeleton() {
   return (
-    <div className="mt-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="h-10 w-full md:w-1/2 rounded-xl border border-neutral-200/60 dark:border-neutral-800/60 bg-white/40 dark:bg-neutral-950/30" />
-        <div className="flex flex-wrap items-center gap-2">
-          {Array.from({ length: 6 }).map((_, i) => (
+    <section className="mt-6">
+      <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-4 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
+        <div className="h-10 w-full rounded-2xl bg-neutral-200/50 dark:bg-neutral-800/40" />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="h-7 w-16 rounded-xl border border-neutral-200/60 dark:border-neutral-800/60 bg-white/40 dark:bg-neutral-950/30"
+              className="h-7 w-20 rounded-full bg-neutral-200/50 dark:bg-neutral-800/40"
             />
           ))}
         </div>
       </div>
 
-      <div className="space-y-6">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
+      <ul className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <li
             key={i}
-            className="h-28 rounded-3xl border border-neutral-200/60 dark:border-neutral-800/60 bg-white/40 dark:bg-neutral-950/30"
+            className="h-44 rounded-3xl border border-neutral-200/60 bg-white/60 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40"
           />
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }
 

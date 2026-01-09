@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition, useDeferredValue } from 'react';
 import Fuse from 'fuse.js';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import PostCard from '@/components/blog/PostCard';
@@ -16,6 +16,7 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
 
   const q0 = searchParams.get('q') ?? '';
   const t0 = searchParams.get('tag') ?? '';
@@ -23,12 +24,26 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
   const [q, setQ] = useState(q0);
   const [tag, setTag] = useState(t0);
 
+  const deferredQ = useDeferredValue(q);
+
   useEffect(() => {
     const handle = setTimeout(() => {
-      const sp = new URLSearchParams();
-      if (q) sp.set('q', q);
+      const sp = new URLSearchParams(searchParams.toString());
+
+      if (q.trim()) sp.set('q', q.trim());
+      else sp.delete('q');
+
       if (tag) sp.set('tag', tag);
-      router.replace(sp.size ? `${pathname}?${sp.toString()}` : pathname);
+      else sp.delete('tag');
+
+      const nextUrl = sp.size ? `${pathname}?${sp.toString()}` : pathname;
+      const currentUrl = searchParams.size ? `${pathname}?${searchParams.toString()}` : pathname;
+
+      if (nextUrl !== currentUrl) {
+        startTransition(() => {
+          router.replace(nextUrl, { scroll: false });
+        });
+      }
     }, 150);
 
     return () => clearTimeout(handle);
@@ -45,11 +60,17 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
   );
 
   const filtered = useMemo(() => {
-    const base = q.trim() ? fuse.search(q.trim()).map((r) => r.item) : posts;
+    const term = deferredQ.trim();
+    const base = term ? fuse.search(term).map((r) => r.item) : posts;
     return tag ? base.filter((p) => (p.tags ?? []).includes(tag)) : base;
-  }, [fuse, posts, q, tag]);
+  }, [deferredQ, fuse, posts, tag]);
 
   const hasActiveFilters = Boolean(q.trim() || tag);
+
+  const clearAll = () => {
+    setQ('');
+    setTag('');
+  };
 
   return (
     <section className="mt-6">
@@ -60,21 +81,37 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') clearAll();
+              }}
               placeholder="Search by title, summary or tag…"
-              className="w-full rounded-2xl border border-neutral-200/70 bg-white/70 px-4 py-2.5 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-500 focus:border-neutral-300 dark:border-neutral-800/70 dark:bg-neutral-950/40 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:border-neutral-700"
+              aria-label="Search posts"
+              className="w-full rounded-2xl border border-neutral-200/70 bg-white/70 px-4 py-2.5 pr-24 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-500 focus:border-neutral-300 dark:border-neutral-800/70 dark:bg-neutral-950/40 dark:text-neutral-100 dark:placeholder:text-neutral-400 dark:focus:border-neutral-700"
             />
+
+            {/* Clear (x) */}
+            {q.trim() ? (
+              <button
+                type="button"
+                onClick={() => setQ('')}
+                className="absolute right-14 top-1/2 -translate-y-1/2 rounded-xl border border-neutral-200/70 bg-white/70 px-2 py-1 text-xs text-neutral-700 shadow-sm hover:bg-white dark:border-neutral-800/70 dark:bg-neutral-950/40 dark:text-neutral-200 dark:hover:bg-neutral-900/60"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            ) : null}
+
+            {/* Count */}
             <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-500 dark:text-neutral-400">
-              {filtered.length}/{posts.length}
+              {isPending ? '…' : `${filtered.length}/${posts.length}`}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {hasActiveFilters ? (
               <button
-                onClick={() => {
-                  setQ('');
-                  setTag('');
-                }}
+                onClick={clearAll}
                 className="rounded-2xl border border-neutral-200/70 bg-white/70 px-3 py-2 text-xs text-neutral-700 shadow-sm hover:bg-white dark:border-neutral-800/70 dark:bg-neutral-950/40 dark:text-neutral-200 dark:hover:bg-neutral-900/60"
               >
                 Reset
@@ -90,7 +127,9 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
         {/* Tag chips */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => setTag('')}
+            aria-pressed={!tag}
             className={cx(
               'rounded-full border px-3 py-1 text-xs transition',
               !tag
@@ -105,8 +144,10 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
             const active = tag === t;
             return (
               <button
+                type="button"
                 key={t}
                 onClick={() => setTag(active ? '' : t)}
+                aria-pressed={active}
                 className={cx(
                   'rounded-full border px-3 py-1 text-xs transition',
                   active
@@ -135,10 +176,7 @@ export default function BlogIndexClient({ locale, posts, allTags }: Props) {
             No results{q ? ` for “${q}”` : ''}{tag ? ` in #${tag}` : ''}.
           </p>
           <button
-            onClick={() => {
-              setQ('');
-              setTag('');
-            }}
+            onClick={clearAll}
             className="mt-4 rounded-2xl border border-neutral-200/70 bg-white/70 px-4 py-2 text-sm text-neutral-700 shadow-sm hover:bg-white dark:border-neutral-800/70 dark:bg-neutral-950/40 dark:text-neutral-200 dark:hover:bg-neutral-900/60"
           >
             Clear filters
