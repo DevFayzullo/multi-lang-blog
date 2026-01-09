@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts } from '@/lib/posts';
 import type { Locale } from '@/lib/types';
+import { getBaseUrl } from '@/lib/site';
 
 export async function GET() {
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
+  const base = getBaseUrl();
   const locales: readonly Locale[] = ['ko', 'en', 'uz'];
 
   const urls: string[] = [];

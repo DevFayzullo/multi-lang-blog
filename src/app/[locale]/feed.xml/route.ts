@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllPosts } from '@/lib/posts';
 import type { Locale } from '@/lib/types';
+import { getBaseUrl } from '@/lib/site';
 
 const LOCALES: readonly Locale[] = ['ko', 'en', 'uz'] as const;
 
@@ -15,7 +16,7 @@ export async function GET(
   const { locale: localeStr } = await params;
   const locale: Locale = isLocale(localeStr) ? localeStr : 'ko';
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
+  const base = getBaseUrl();
 
   const posts = await getAllPosts(locale);
   const items = posts

@@ -11,6 +11,7 @@ import { altLocales } from '@/lib/seo';
 import ReadingProgress from '@/components/blog/ReadingProgress';
 import TableOfContents, { type TocItem } from '@/components/blog/TableOfContents';
 import { slugify } from '@/lib/slug';
+import { getBaseUrl } from '@/lib/site';
 
 export const dynamicParams = false;
 
@@ -77,7 +78,7 @@ export async function generateMetadata({
   const title = meta.title;
   const description = meta.description ?? meta.summary ?? 'Multi-language blog post';
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
+  const base = getBaseUrl();
   const og = new URL(`/${locale}/og`, base);
   og.searchParams.set('title', title);
 
