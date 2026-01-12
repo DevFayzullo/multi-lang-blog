@@ -1,21 +1,13 @@
 import fs from 'node:fs/promises';
 import matter from 'gray-matter';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import type { Locale } from '@/lib/types';
-import { getAllPosts, getPostBySlug } from '@/lib/posts';
+import { getPostBySlug, getPostNeighbors } from '@/lib/posts';
 import { Mdx } from '@/lib/mdx';
 import { altLocales } from '@/lib/seo';
 import ReadingProgress from '@/components/blog/ReadingProgress';
-import TableOfContents, { type TocItem } from '@/components/blog/TableOfContents';
-import { slugify } from '@/lib/slug';
-import { getBaseUrl } from '@/lib/site';
-
-export const dynamicParams = false;
-
-const LOCALES: readonly Locale[] = ['ko', 'en', 'uz'];
 
 function formatDate(date: string, locale: Locale) {
   const map: Record<Locale, string> = { ko: 'ko-KR', en: 'en-US', uz: 'uz-UZ' };
@@ -24,45 +16,6 @@ function formatDate(date: string, locale: Locale) {
     month: 'short',
     day: '2-digit'
   });
-}
-
-function stripCodeFences(md: string) {
-  return md
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/~~~[\s\S]*?~~~/g, '');
-}
-
-function extractToc(md: string): TocItem[] {
-  const clean = stripCodeFences(md);
-  const lines = clean.split('\n');
-
-  const items: TocItem[] = [];
-  for (const line of lines) {
-    const h2 = line.match(/^##\s+(.+)\s*$/);
-    const h3 = line.match(/^###\s+(.+)\s*$/);
-
-    const raw = (h2?.[1] ?? h3?.[1])?.trim();
-    if (!raw) continue;
-
-    const title = raw
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-      .replace(/[*_`]/g, '')
-      .trim();
-
-    const id = slugify(title);
-    items.push({ id, title, level: h2 ? 2 : 3 });
-  }
-  return items;
-}
-
-export async function generateStaticParams() {
-  const all = await Promise.all(
-    LOCALES.map(async (locale) => {
-      const posts = await getAllPosts(locale);
-      return posts.map((p) => ({ locale, slug: p.slug }));
-    })
-  );
-  return all.flat();
 }
 
 export async function generateMetadata({
@@ -76,9 +29,9 @@ export async function generateMetadata({
   if (!meta) return { title: 'Post not found' };
 
   const title = meta.title;
-  const description = meta.description ?? meta.summary ?? 'Multi-language blog post';
+  const description = meta.description ?? 'Multi-language blog post';
 
-  const base = getBaseUrl();
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
   const og = new URL(`/${locale}/og`, base);
   og.searchParams.set('title', title);
 
@@ -100,6 +53,50 @@ export async function generateMetadata({
   };
 }
 
+function NavCard({
+  locale,
+  direction,
+  post
+}: {
+  locale: Locale;
+  direction: 'prev' | 'next';
+  post: { slug: string; title: string; date: string; readingTime: number; summary?: string };
+}) {
+  const isPrev = direction === 'prev';
+  const href = `/${locale}/blog/${post.slug}`;
+
+  return (
+    <Link
+      href={href}
+      className="group block rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:shadow-md dark:border-neutral-800/60 dark:bg-neutral-950/40"
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-xs font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
+          {isPrev ? '← Prev (Newer)' : 'Next (Older) →'}
+        </div>
+        <div className="text-xs text-neutral-500 dark:text-neutral-400">
+          {formatDate(post.date, locale)} • {post.readingTime} min
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <h3 className="text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+          {post.title}
+        </h3>
+        {post.summary ? (
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+            {post.summary}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 text-xs text-neutral-500 transition group-hover:text-neutral-900 dark:text-neutral-400 dark:group-hover:text-neutral-100">
+        Open post →
+      </div>
+    </Link>
+  );
+}
+
 export default async function PostPage({
   params
 }: {
@@ -110,33 +107,10 @@ export default async function PostPage({
   const meta = await getPostBySlug(locale, slug);
   if (!meta) return notFound();
 
+  const { prev, next } = await getPostNeighbors(locale, slug);
+
   const src = await fs.readFile(meta.filepath, 'utf8');
   const { content } = matter(src);
-
-  // TOC
-  const toc = extractToc(content);
-
-  // prev/next + related
-  const all = await getAllPosts(locale);
-  const idx = all.findIndex((p) => p.slug === slug);
-
-  const newer = idx > 0 ? all[idx - 1] : null;
-  const older = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
-
-  const tags = meta.tags ?? [];
-  const related = all
-    .filter((p) => p.slug !== slug)
-    .map((p) => {
-      const overlap = (p.tags ?? []).filter((t) => tags.includes(t)).length;
-      return { p, overlap };
-    })
-    .filter((x) => x.overlap > 0)
-    .sort((a, b) => b.overlap - a.overlap || +new Date(b.p.date) - +new Date(a.p.date))
-    .slice(0, 3)
-    .map((x) => x.p);
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const canonical = `${baseUrl}/${locale}/blog/${slug}`;
 
   return (
     <>
@@ -161,13 +135,11 @@ export default async function PostPage({
         {/* Header card */}
         <section className="relative overflow-hidden rounded-3xl border border-neutral-200/60 bg-white/60 p-8 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
           <div className="pointer-events-none absolute inset-0 opacity-60 mask-[radial-gradient(60%_60%_at_50%_0%,black,transparent)]">
-            <div className="absolute -top-24 left-1/2 h-72 w-184 -translate-x-1/2 rounded-full bg-linear-to-r from-neutral-200 to-neutral-100 blur-3xl dark:from-neutral-900 dark:to-neutral-950" />
+            <div className="absolute -top-24 left-1/2 h-72 w- -translate-x-1/2 rounded-full bg-linear-to-r from-neutral-200 to-neutral-100 blur-3xl dark:from-neutral-900 dark:to-neutral-950" />
           </div>
 
           <div className="relative">
-            <p className="text-xs font-medium tracking-wider text-neutral-500 dark:text-neutral-400">
-              ARTICLE
-            </p>
+            <p className="text-xs font-medium tracking-wider text-neutral-500 dark:text-neutral-400">ARTICLE</p>
 
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
               {meta.title}
@@ -191,19 +163,6 @@ export default async function PostPage({
                 ))}
               </div>
             ) : null}
-
-            {meta.cover ? (
-              <div className="mt-7 overflow-hidden rounded-2xl border border-neutral-200/60 dark:border-neutral-800/60">
-                <Image
-                  src={meta.cover}
-                  alt={meta.title}
-                  width={1600}
-                  height={900}
-                  className="h-auto w-full object-cover"
-                  priority
-                />
-              </div>
-            ) : null}
           </div>
         </section>
 
@@ -215,94 +174,24 @@ export default async function PostPage({
             </div>
 
             {/* Prev/Next */}
-            <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-neutral-200/60 bg-white/50 p-5 dark:border-neutral-800/60 dark:bg-neutral-950/30">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Newer</p>
-                {newer ? (
-                  <Link
-                    href={`/${locale}/blog/${newer.slug}`}
-                    className="mt-1 block font-medium text-neutral-900 hover:underline dark:text-neutral-100"
-                  >
-                    {newer.title}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">No newer post</p>
-                )}
-              </div>
+            {(prev || next) && (
+              <div className="mt-10 border-t border-neutral-200/60 pt-8 dark:border-neutral-800/60">
+                <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+                  Continue reading
+                </h2>
 
-              <div className="rounded-2xl border border-neutral-200/60 bg-white/50 p-5 dark:border-neutral-800/60 dark:bg-neutral-950/30">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Older</p>
-                {older ? (
-                  <Link
-                    href={`/${locale}/blog/${older.slug}`}
-                    className="mt-1 block font-medium text-neutral-900 hover:underline dark:text-neutral-100"
-                  >
-                    {older.title}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">No older post</p>
-                )}
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {prev ? <NavCard locale={locale} direction="prev" post={prev} /> : <div />}
+                  {next ? <NavCard locale={locale} direction="next" post={next} /> : <div />}
+                </div>
               </div>
-            </div>
+            )}
           </article>
 
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-24 h-fit space-y-4">
-            <TableOfContents items={toc} />
-
             <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-              <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-                Share
-              </h2>
-              <div className="mt-4 flex flex-wrap gap-3 text-xs">
-                <a
-                  className="underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(meta.title)}&url=${encodeURIComponent(
-                    canonical
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Share on X
-                </a>
-                <a
-                  className="underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonical)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Share on LinkedIn
-                </a>
-              </div>
-            </div>
-
-            {related.length ? (
-              <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-                <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-                  Related posts
-                </h2>
-                <ul className="mt-4 space-y-3 text-sm">
-                  {related.map((p) => (
-                    <li key={p.slug}>
-                      <Link
-                        href={`/${locale}/blog/${p.slug}`}
-                        className="text-neutral-700 hover:text-neutral-900 hover:underline dark:text-neutral-300 dark:hover:text-neutral-100"
-                      >
-                        {p.title}
-                      </Link>
-                      <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        {formatDate(p.date, locale)} • {p.readingTime} min
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            <div className="rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
-              <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-                Details
-              </h2>
+              <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">Details</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-neutral-600 dark:text-neutral-400">Locale</dt>
@@ -317,6 +206,29 @@ export default async function PostPage({
                   <dd className="font-medium text-neutral-900 dark:text-neutral-100">{meta.readingTime} min</dd>
                 </div>
               </dl>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                <a
+                  className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(meta.title)}&url=${encodeURIComponent(
+                    `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Share on X
+                </a>
+                <a
+                  className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+                    `${process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'}/${locale}/blog/${slug}`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Share on LinkedIn
+                </a>
+              </div>
             </div>
           </aside>
         </section>

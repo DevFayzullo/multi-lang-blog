@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import * as fsSync from 'node:fs';
+import { accessSync, constants } from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { z } from 'zod';
@@ -10,26 +10,22 @@ const fmSchema = z.object({
   date: z.string(),
   slug: z.string().min(1),
   summary: z.string().optional(),
-  description: z.string().optional(),
   tags: z.array(z.string()).optional(),
   cover: z.string().optional(),
   draft: z.boolean().default(false),
-  lang: z.enum(["ko", "en", "uz"]),
+  lang: z.enum(['ko', 'en', 'uz'])
 });
 
 function getContentDir(): string {
   const cwd = process.cwd();
-  const candidates = [
-    path.join(cwd, 'src', 'content'),
-    path.join(cwd, 'content'),
-  ];
+  const candidates = [path.join(cwd, 'src', 'content'), path.join(cwd, 'content')];
 
   for (const candidate of candidates) {
     try {
-      fsSync.accessSync(candidate);
+      accessSync(candidate, constants.F_OK);
       return candidate;
     } catch {
-      // not found, continue
+      // skip if not found
     }
   }
 
@@ -37,33 +33,26 @@ function getContentDir(): string {
   return path.join(cwd, 'content');
 }
 
-
 const CONTENT_DIR = getContentDir();
 
 export async function getAllPosts(locale: Locale): Promise<PostMeta[]> {
-  const dir = path.join(CONTENT_DIR, locale, "posts");
+  const dir = path.join(CONTENT_DIR, locale, 'posts');
   const files = await safeReaddir(dir);
   const out: PostMeta[] = [];
 
   for (const f of files) {
-    if (!f.endsWith(".mdx") && !f.endsWith(".md")) continue;
+    if (!f.endsWith('.mdx') && !f.endsWith('.md')) continue;
     const filepath = path.join(dir, f);
 
     try {
-      const src = await fs.readFile(filepath, "utf8");
+      const src = await fs.readFile(filepath, 'utf8');
       const { data, content } = matter(src);
-
       const fm = fmSchema.parse({ ...data, lang: locale });
+
       const words = content.trim().split(/\s+/).filter(Boolean).length;
       const readingTime = Math.max(1, Math.round(words / 200));
 
-      out.push({
-        ...fm,
-        description: fm.description ?? fm.summary,
-        words,
-        readingTime,
-        filepath,
-      });
+      out.push({ ...fm, words, readingTime, filepath } as PostMeta);
     } catch (err) {
       console.warn(`⚠️ Skip invalid frontmatter: ${filepath}`);
       console.warn(err);
@@ -78,6 +67,20 @@ export async function getAllPosts(locale: Locale): Promise<PostMeta[]> {
 export async function getPostBySlug(locale: Locale, slug: string) {
   const posts = await getAllPosts(locale);
   return posts.find((p) => p.slug === slug) ?? null;
+}
+
+export async function getPostNeighbors(locale: Locale, slug: string): Promise<{
+  prev: PostMeta | null;
+  next: PostMeta | null;
+}> {
+  const posts = await getAllPosts(locale);
+  const idx = posts.findIndex((p) => p.slug === slug);
+  if (idx === -1) return { prev: null, next: null };
+
+  const prev = idx > 0 ? posts[idx - 1] : null;
+  const next = idx < posts.length - 1 ? posts[idx + 1] : null;
+
+  return { prev, next };
 }
 
 async function safeReaddir(dir: string): Promise<string[]> {
