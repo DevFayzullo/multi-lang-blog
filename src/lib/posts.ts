@@ -13,7 +13,8 @@ const fmSchema = z.object({
   tags: z.array(z.string()).optional(),
   cover: z.string().optional(),
   draft: z.boolean().default(false),
-  lang: z.enum(['ko', 'en', 'uz'])
+  lang: z.enum(['ko', 'en', 'uz']),
+  description: z.string().optional()
 });
 
 function getContentDir(): string {

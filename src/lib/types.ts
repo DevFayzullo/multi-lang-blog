@@ -13,6 +13,7 @@ export interface PostFrontmatter {
 }
 
 export interface PostMeta extends PostFrontmatter {
+  description?: string;
   words: number;
   readingTime: number;
   filepath: string;
