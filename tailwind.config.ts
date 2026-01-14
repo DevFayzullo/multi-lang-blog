@@ -2,6 +2,7 @@ import type { Config } from 'tailwindcss'
 import typography from '@tailwindcss/typography'
 
 export default {
+  darkMode: "class",
   content: [
     './src/app/**/*.{ts,tsx,mdx}',
     './src/components/**/*.{ts,tsx,mdx}',
