@@ -1,3 +1,4 @@
+@config "../../tailwind.config.ts";
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -11,7 +12,6 @@ html, body { height: 100%; }
   @apply rounded px-1 py-0.5 bg-neutral-100 dark:bg-neutral-800;
 }
 
-/* nicer selection for prose/code */
 .prose ::selection {
   background: rgba(120, 120, 120, 0.25);
 }
