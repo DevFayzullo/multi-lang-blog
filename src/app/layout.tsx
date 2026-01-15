@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     siteName: "Multi-Lang Blog",
     images: [
       {
-        url: `/ko${site.ogImagePath}`, // <-- default fallback
+        url: `/ko${site.ogImagePath}`, 
         width: 1200,
         height: 630,
       },

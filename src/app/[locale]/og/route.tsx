@@ -1,4 +1,3 @@
-// src/app/[locale]/og/route.tsx
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
@@ -21,7 +20,6 @@ export async function GET(req: NextRequest) {
   const { searchParams, pathname } = req.nextUrl;
   const locale = getLocaleFromPath(pathname);
 
-  // title bo‘lmasa ham fallback ishlaydi
   const title = searchParams.get("title")?.trim() || "Multi-Lang Blog";
   const subtitle = searchParams.get("subtitle")?.trim() || defaultSubtitle(locale);
 
