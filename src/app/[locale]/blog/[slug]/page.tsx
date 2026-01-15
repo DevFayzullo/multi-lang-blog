@@ -9,6 +9,7 @@ import { Mdx } from "@/lib/mdx";
 import { altLocales } from "@/lib/seo";
 import ReadingProgress from "@/components/blog/ReadingProgress";
 import PostNeighbors from "./PostNeighbors";
+import Script from "next/script";
 
 function formatDate(date: string, locale: Locale) {
   const map: Record<Locale, string> = { ko: "ko-KR", en: "en-US", uz: "uz-UZ" };
@@ -30,9 +31,12 @@ export async function generateMetadata({
   if (!meta) return { title: "Post not found" };
 
   const title = meta.title;
-  const description = meta.description ?? "Multi-language blog post";
+  const description =
+    meta.description ?? meta.summary ?? "Multi-language blog post";
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const url = new URL(`/${locale}/blog/${slug}`, base).toString();
+
   const og = new URL(`/${locale}/og`, base);
   og.searchParams.set("title", title);
 
@@ -41,6 +45,8 @@ export async function generateMetadata({
     description,
     alternates: altLocales(locale, `/blog/${slug}`),
     openGraph: {
+      type: "article",
+      url,
       title,
       description,
       images: [{ url: og.toString(), width: 1200, height: 630 }],
@@ -64,6 +70,23 @@ export default async function PostPage({
   const meta = await getPostBySlug(locale, slug);
   if (!meta) return notFound();
 
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const postUrl = `${base}/${locale}/blog/${slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: meta.title,
+    description: meta.description ?? meta.summary ?? "",
+    datePublished: meta.date,
+    dateModified: meta.date,
+    inLanguage: locale,
+    mainEntityOfPage: postUrl,
+    url: postUrl,
+    author: { "@type": "Person", name: "Solijon" },
+    publisher: { "@type": "Organization", name: "Multi-Lang Blog" },
+  };
+
   const { prev, next } = await getPostNeighbors(locale, slug);
 
   const src = await fs.readFile(meta.filepath, "utf8");
@@ -71,6 +94,11 @@ export default async function PostPage({
 
   return (
     <>
+      <Script
+        id="post-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <ReadingProgress />
 
       <main className="mx-auto max-w-6xl px-6 py-12">

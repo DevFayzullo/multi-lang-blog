@@ -1,21 +1,32 @@
-type Locale = 'ko' | 'en' | 'uz';
-const LOCALES: Locale[] = ['ko', 'en', 'uz'];
+import type { Locale } from "@/lib/types";
 
-function normalizePath(path: string) {
-  if (!path || path === '/') return '';
-  return path.startsWith('/') ? path : `/${path}`;
+export const site = {
+  name: "Multi-Lang Blog",
+  description: "TypeScript + Next.js multi-language blog",
+  author: "DevFayzullo",
+  twitterHandle: "@FayzulloDev",
+};
+
+export function getBaseUrl() {
+  return process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 }
 
-export function altLocales(locale: string, path: string) {
-  const normalized = normalizePath(path);
-  const current = (LOCALES.includes(locale as Locale) ? locale : 'ko') as Locale;
+export const locales: Locale[] = ["ko", "en", "uz"];
 
-  const languages: Record<string, string> = {};
-  for (const l of LOCALES) languages[l] = `/${l}${normalized}`;
-  languages['x-default'] = `/ko${normalized}`;
+export function canonicalUrl(locale: Locale, pathname: string) {
+  const base = getBaseUrl();
+  return new URL(`/${locale}${pathname}`, base).toString();
+}
+
+export function alternatesForLocale(locale: Locale, pathname: string) {
+  const base = getBaseUrl();
+
+  const languages = Object.fromEntries(
+    locales.map((l) => [l, new URL(`/${l}${pathname}`, base).toString()])
+  ) as Record<Locale, string>;
 
   return {
-    canonical: `/${current}${normalized}`,
-    languages
+    canonical: new URL(`/${locale}${pathname}`, base).toString(),
+    languages,
   };
 }

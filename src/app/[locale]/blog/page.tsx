@@ -1,28 +1,39 @@
-import { Suspense } from 'react';
-import { getAllPosts } from '@/lib/posts';
-import type { Locale } from '@/lib/types';
-import { altLocales } from '@/lib/seo';
-import BlogIndexClient from './BlogIndexClient';
-import BlogIndexSkeleton from './BlogIndexSkeleton';
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/types";
+import { alternatesForLocale, site, getBaseUrl } from "@/lib/seo";
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  return { title: 'Blog', alternates: altLocales(locale, '/blog') };
-}
-
-export default async function BlogIndex({ params }: { params: Promise<{ locale: Locale }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
   const { locale } = await params;
 
-  const posts = await getAllPosts(locale);
-  const tags = Array.from(new Set(posts.flatMap((p) => p.tags ?? []))).sort();
+  const title = locale === "ko" ? "블로그" : locale === "uz" ? "Blog" : "Blog";
+  const description = site.description;
 
-  return (
-    <main className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-3xl font-semibold">Blog</h1>
+  const base = getBaseUrl();
+  const url = new URL(`/${locale}/blog`, base).toString();
 
-      <Suspense fallback={<BlogIndexSkeleton />}>
-        <BlogIndexClient locale={locale} posts={posts} allTags={tags} />
-      </Suspense>
-    </main>
-  );
+  const og = new URL(`/${locale}/og`, base);
+  og.searchParams.set("title", `${title} - ${site.name}`);
+
+  return {
+    title,
+    description,
+    alternates: alternatesForLocale(locale, "/blog"),
+    openGraph: {
+      type: "website",
+      url,
+      title,
+      description,
+      images: [{ url: og.toString(), width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [og.toString()],
+    },
+  };
 }
