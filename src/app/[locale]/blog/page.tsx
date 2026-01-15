@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/lib/types";
-import { alternatesForLocale, site, getBaseUrl } from "@/lib/seo";
+import { altLocales, site, getBaseUrl } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -21,7 +21,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: alternatesForLocale(locale, "/blog"),
+    alternates: altLocales(locale, "/blog"),
     openGraph: {
       type: "website",
       url,

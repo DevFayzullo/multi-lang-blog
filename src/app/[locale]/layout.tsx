@@ -1,52 +1,48 @@
-import "./globals.css";
-import ThemeProvider from "@/components/providers/ThemeProvider";
-import { Inter, Noto_Sans_KR } from "next/font/google";
-import type { Metadata } from "next";
-import { getBaseUrl, site } from "@/lib/seo";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { ThemeProvider } from "next-themes";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const notoKR = Noto_Sans_KR({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-notokr", display: "swap" });
+const LOCALES = ["ko", "en", "uz"] as const;
+type Locale = (typeof LOCALES)[number];
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getBaseUrl()),
-  title: {
-    default: site.name,
-    template: `%s | ${site.name}`,
-  },
-  description: site.description,
-  applicationName: site.name,
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
-  openGraph: {
-    type: "website",
-    siteName: site.name,
-    title: site.name,
-    description: site.description,
-    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: site.name,
-    description: site.description,
-    images: ["/og-default.png"],
-  },
-};
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }));
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+
+  if (!LOCALES.includes(locale)) notFound();
+
+  setRequestLocale(locale);
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${notoKR.variable} min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
-    </html>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <NextIntlClientProvider
+        messages={messages}
+        locale={locale}
+        timeZone="Asia/Seoul"
+      >
+        <div className="min-h-dvh flex flex-col">
+          <Header />
+
+          <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+            {children}
+          </main>
+
+          <Footer />
+        </div>
+      </NextIntlClientProvider>
+    </ThemeProvider>
   );
 }
