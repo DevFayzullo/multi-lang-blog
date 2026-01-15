@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true}); require('fs').rmSync('.turbo',{recursive:true,force:true});\"",
     "build": "pnpm run clean && next build",
     "build:turbopack": "next build --turbopack",
