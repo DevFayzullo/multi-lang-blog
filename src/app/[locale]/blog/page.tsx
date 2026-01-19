@@ -1,23 +1,10 @@
 import type { Metadata } from "next";
-import type { Locale } from "@/lib/types";
-import { altLocales, site, getBaseUrl } from "@/lib/seo";
-
-import { getAllPosts } from "@/lib/posts";
-import BlogIndexClient from "./BlogIndexClient";
 import { Suspense } from "react";
 
-function BlogIndexSkeleton() {
-  return (
-    <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-40 rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40"
-        />
-      ))}
-    </div>
-  );
-}
+import type { Locale } from "@/lib/types";
+import { getAllPosts } from "@/lib/posts";
+import BlogIndexClient from "./BlogIndexClient";
+import { altLocales, site, getBaseUrl } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -55,7 +42,23 @@ export async function generateMetadata({
   };
 }
 
-export default async function Page({
+function BlogIndexFallback() {
+  return (
+    <div className="mt-6 rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40">
+      <div className="h-9 w-full rounded-2xl bg-neutral-200/60 dark:bg-neutral-800/60" />
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-28 rounded-3xl border border-neutral-200/60 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-neutral-800/60 dark:bg-neutral-950/40"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default async function BlogPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
@@ -64,17 +67,20 @@ export default async function Page({
 
   const posts = await getAllPosts(locale);
 
-  const allTags = Array.from(new Set(posts.flatMap((p) => p.tags ?? []))).sort(
-    (a, b) => a.localeCompare(b)
-  );
+  const allTags = Array.from(
+    new Set(posts.flatMap((p) => p.tags ?? []))
+  ).sort((a, b) => a.localeCompare(b));
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-8">
-      <h1 className="text-3xl font-semibold tracking-tight">
-        {locale === "ko" ? "블로그" : "Blog"}
+    <main className="mx-auto w-full max-w-5xl px-6 py-12">
+      <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+        Blog
       </h1>
+      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+        {site.description}
+      </p>
 
-      <Suspense fallback={<BlogIndexSkeleton />}>
+      <Suspense fallback={<BlogIndexFallback />}>
         <BlogIndexClient locale={locale} posts={posts} allTags={allTags} />
       </Suspense>
     </main>
