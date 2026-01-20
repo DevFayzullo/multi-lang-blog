@@ -1,33 +1,56 @@
 import type { Locale } from "@/lib/types";
 
-export function getBaseUrl() {
-  return process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-}
+export const LOCALES: readonly Locale[] = ["ko", "en", "uz"] as const;
+export const DEFAULT_LOCALE: Locale = "ko";
 
 export const site = {
   name: "Multi-Lang Blog",
   description: "TypeScript + Next.js multi-language blog",
-  ogImagePath: "/og", 
-};
+} as const;
 
-export const LOCALES: Locale[] = ["ko", "en", "uz"];
+export function getBaseUrl(): string {
+  const explicit =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL;
 
-export function altLocales(locale: string, path: string) {
+  if (explicit) return stripTrailingSlash(explicit);
+
+  const netlify =
+    process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.CONTEXT;
+
+  if (typeof netlify === "string" && netlify.startsWith("http")) {
+    return stripTrailingSlash(netlify);
+  }
+
+  return "http://localhost:3000";
+}
+
+function stripTrailingSlash(url: string) {
+  return url.replace(/\/+$/, "");
+}
+
+export function altLocales(locale: Locale, path: string) {
   const base = getBaseUrl();
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
-  const normalized: Locale = (LOCALES as string[]).includes(locale)
-    ? (locale as Locale)
-    : "en";
-
-  const languages = Object.fromEntries(
-    LOCALES.map((l) => [l, new URL(`/${l}${path}`, base).toString()])
-  ) as Record<Locale, string>;
+  const languages: Record<string, string> = {};
+  for (const l of LOCALES) {
+    languages[l] = `${base}/${l}${cleanPath}`;
+  }
 
   return {
-    canonical: new URL(`/${normalized}${path}`, base).toString(),
+    canonical: `${base}/${locale}${cleanPath}`,
     languages: {
       ...languages,
-      "x-default": new URL(`/ko${path}`, base).toString(),
-    } as Record<string, string>,
+      "x-default": `${base}/${DEFAULT_LOCALE}${cleanPath}`,
+    },
   };
+}
+
+export function ogImageUrl(locale: Locale, title: string) {
+  const base = getBaseUrl();
+  const og = new URL(`/${locale}/og`, base);
+  og.searchParams.set("title", title);
+  return og.toString();
 }

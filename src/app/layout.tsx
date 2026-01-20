@@ -1,7 +1,7 @@
+import type { Metadata } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/providers/ThemeProvider";
 import { Inter, Noto_Sans_KR } from "next/font/google";
-import type { Metadata } from "next";
 import { getBaseUrl, site } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -9,23 +9,11 @@ const notoKR = Noto_Sans_KR({ weight: ["400", "700"], subsets: ["latin"], variab
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
-  title: { default: "Multi-Lang Blog", template: "%s | Multi-Lang Blog" },
-  description: "TypeScript + Next.js multi-language blog",
-  openGraph: {
-    type: "website",
-    siteName: "Multi-Lang Blog",
-    images: [
-      {
-        url: `/ko${site.ogImagePath}`, 
-        width: 1200,
-        height: 630,
-      },
-    ],
+  title: {
+    default: site.name,
+    template: `%s | ${site.name}`,
   },
-  twitter: {
-    card: "summary_large_image",
-    images: [`/ko${site.ogImagePath}`],
-  },
+  description: site.description,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

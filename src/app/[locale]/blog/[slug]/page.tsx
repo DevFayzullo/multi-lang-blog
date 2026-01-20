@@ -3,10 +3,11 @@ import matter from "gray-matter";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import type { Metadata } from "next";
 import type { Locale } from "@/lib/types";
+import { altLocales, ogImageUrl, site } from "@/lib/seo";
 import { getPostBySlug, getPostNeighbors } from "@/lib/posts";
 import { Mdx } from "@/lib/mdx";
-import { altLocales } from "@/lib/seo";
 import ReadingProgress from "@/components/blog/ReadingProgress";
 import PostNeighbors from "./PostNeighbors";
 import Script from "next/script";
@@ -23,39 +24,35 @@ function formatDate(date: string, locale: Locale) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }>;
-}) {
+  params: Promise<{ locale: Locale; slug: string }>;
+}): Promise<Metadata> {
   const { locale, slug } = await params;
 
-  const meta = await getPostBySlug(locale as Locale, slug);
+  const meta = await getPostBySlug(locale, slug);
   if (!meta) return { title: "Post not found" };
 
   const title = meta.title;
-  const description =
-    meta.description ?? meta.summary ?? "Multi-language blog post";
+  const description = meta.summary ?? site.description;
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const url = new URL(`/${locale}/blog/${slug}`, base).toString();
-
-  const og = new URL(`/${locale}/og`, base);
-  og.searchParams.set("title", title);
+  const alternates = altLocales(locale, `/blog/${slug}`);
+  const og = ogImageUrl(locale, `${title} | ${site.name}`);
 
   return {
     title,
     description,
-    alternates: altLocales(locale, `/blog/${slug}`),
+    alternates,
     openGraph: {
       type: "article",
-      url,
       title,
       description,
-      images: [{ url: og.toString(), width: 1200, height: 630 }],
+      url: alternates.canonical,
+      images: [{ url: og, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [og.toString()],
+      images: [og],
     },
   };
 }
