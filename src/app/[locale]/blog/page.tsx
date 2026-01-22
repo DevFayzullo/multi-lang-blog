@@ -3,11 +3,9 @@ import type { Metadata } from "next";
 
 import { getAllPosts } from "@/lib/posts";
 import type { Locale } from "@/lib/types";
-import { altLocales, ogImageUrl, site } from "@/lib/seo";
+import { LOCALES, altLocales, ogImageUrl, site } from "@/lib/seo";
 
 import BlogIndexClient from "./BlogIndexClient";
-
-const LOCALES: Locale[] = ["ko", "en", "uz"];
 
 export function generateStaticParams(): Array<{ locale: Locale }> {
   return LOCALES.map((locale) => ({ locale }));
@@ -35,6 +33,7 @@ export async function generateMetadata({
       title,
       description,
       url: alternates.canonical,
+      siteName: site.name,
       images: [{ url: og, width: 1200, height: 630 }],
     },
     twitter: {
