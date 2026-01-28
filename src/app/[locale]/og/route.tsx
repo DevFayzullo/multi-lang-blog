@@ -7,7 +7,7 @@ const size = { width: 1200, height: 630 };
 
 function getLocaleFromPath(pathname: string) {
   const seg = pathname.split("/").filter(Boolean)[0];
-  return seg && ["ko", "en", "uz"].includes(seg) ? seg : "en";
+  return seg && ["ko", "en", "uz"].includes(seg) ? seg : "ko";
 }
 
 function defaultSubtitle(locale: string) {
@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
   const locale = getLocaleFromPath(pathname);
 
   const title = searchParams.get("title")?.trim() || "Multi-Lang Blog";
-  const subtitle = searchParams.get("subtitle")?.trim() || defaultSubtitle(locale);
+  const subtitle =
+    searchParams.get("subtitle")?.trim() || defaultSubtitle(locale);
 
   return new ImageResponse(
     (
@@ -33,12 +34,22 @@ export async function GET(req: NextRequest) {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "72px",
-          background: "linear-gradient(135deg, #0a0a0a 0%, #111827 60%, #0b1220 100%)",
+          background:
+            "linear-gradient(135deg, #0a0a0a 0%, #111827 60%, #0b1220 100%)",
           color: "white",
-          fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
+          fontFamily:
+            "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 22, opacity: 0.9 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontSize: 22,
+            opacity: 0.9,
+          }}
+        >
           <span style={{ fontSize: 26 }}>🌐</span>
           <span>Multi-Lang Blog</span>
           <span style={{ marginLeft: 10, fontSize: 16, opacity: 0.7 }}>
@@ -47,7 +58,14 @@ export async function GET(req: NextRequest) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 1.05, letterSpacing: -1 }}>
+          <div
+            style={{
+              fontSize: 64,
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: -1,
+            }}
+          >
             {title}
           </div>
           <div style={{ fontSize: 28, opacity: 0.85, lineHeight: 1.3 }}>
@@ -55,12 +73,26 @@ export async function GET(req: NextRequest) {
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18, opacity: 0.75 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 18,
+            opacity: 0.75,
+          }}
+        >
           <span>multi-lang blog</span>
           <span>next.js • typescript</span>
         </div>
       </div>
     ),
-    size
+    {
+      ...size,
+      headers: {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Type": "image/png",
+      },
+    }
   );
 }
