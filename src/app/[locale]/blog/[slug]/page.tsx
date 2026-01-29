@@ -2,14 +2,15 @@ import fs from "node:fs/promises";
 import matter from "gray-matter";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
 
+import type { Metadata } from "next";
 import type { Locale } from "@/lib/types";
-import { altLocales, getBaseUrl, ogImageUrl, site } from "@/lib/seo";
+import { altLocales, ogImageUrl, site, getBaseUrl } from "@/lib/seo";
 import { getPostBySlug, getPostNeighbors } from "@/lib/posts";
 import { Mdx } from "@/lib/mdx";
 import ReadingProgress from "@/components/blog/ReadingProgress";
 import PostNeighbors from "./PostNeighbors";
+import Script from "next/script";
 
 function formatDate(date: string, locale: Locale) {
   const map: Record<Locale, string> = { ko: "ko-KR", en: "en-US", uz: "uz-UZ" };
@@ -20,15 +21,15 @@ function formatDate(date: string, locale: Locale) {
   });
 }
 
-function localeToOgLocale(locale: Locale) {
-  switch (locale) {
-    case "ko":
-      return "ko_KR";
-    case "uz":
-      return "uz_UZ";
-    default:
-      return "en_US";
-  }
+function stripMarkdown(md: string) {
+  return md
+    .replace(/```[\s\S]*?```/g, " ") // code blocks
+    .replace(/`[^`]*`/g, " ") // inline code
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, " ") // images
+    .replace(/\[[^\]]*\]\([^)]+\)/g, " ") // links
+    .replace(/[#>*_~\-]+/g, " ") // md tokens
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function generateMetadata({
@@ -56,10 +57,6 @@ export async function generateMetadata({
       title,
       description,
       url: alternates.canonical,
-      siteName: site.name,
-      locale: localeToOgLocale(locale),
-      publishedTime: new Date(meta.date).toISOString(),
-      tags: meta.tags ?? [],
       images: [{ url: og, width: 1200, height: 630 }],
     },
     twitter: {
@@ -81,45 +78,53 @@ export default async function PostPage({
   const meta = await getPostBySlug(locale, slug);
   if (!meta) return notFound();
 
-  const base = getBaseUrl();
-  const postUrl = `${base}/${locale}/blog/${slug}`;
+  const alternates = altLocales(locale, `/blog/${slug}`);
+  const canonicalUrl = alternates.canonical;
+
   const og = ogImageUrl(locale, `${meta.title} | ${site.name}`);
-
-  const publishedIso = new Date(meta.date).toISOString();
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: meta.title,
-    description: meta.description ?? meta.summary ?? site.description,
-    inLanguage: locale,
-    datePublished: publishedIso,
-    dateModified: publishedIso,
-    mainEntityOfPage: postUrl,
-    url: postUrl,
-    image: [og],
-    author: {
-      "@type": "Organization",
-      name: site.name,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: site.name,
-      logo: {
-        "@type": "ImageObject",
-        url: `${base}/icon.png`,
-      },
-    },
-  };
+  const base = getBaseUrl();
+  const publisherLogo = new URL("/icon.png", base).toString();
 
   const { prev, next } = await getPostNeighbors(locale, slug);
 
   const src = await fs.readFile(meta.filepath, "utf8");
   const { content } = matter(src);
 
+  const plain = stripMarkdown(content);
+  const wordCount = plain ? plain.split(" ").length : undefined;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: meta.title,
+    name: meta.title,
+    description: meta.description ?? meta.summary ?? "",
+    inLanguage: locale,
+    url: canonicalUrl,
+    mainEntityOfPage: canonicalUrl,
+    datePublished: meta.date,
+    dateModified: meta.date, 
+    image: [og],
+    keywords: meta.tags ?? [],
+    wordCount,
+    author: {
+      "@type": "Person",
+      name: "Solijon",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: site.name,
+      logo: {
+        "@type": "ImageObject",
+        url: publisherLogo,
+      },
+    },
+  };
+
   return (
     <>
-      <script
+      <Script
+        id="post-jsonld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
@@ -194,56 +199,26 @@ export default async function PostPage({
               <h2 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
                 Details
               </h2>
-
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="text-neutral-600 dark:text-neutral-400">
-                    Locale
-                  </dt>
+                  <dt className="text-neutral-600 dark:text-neutral-400">Locale</dt>
                   <dd className="font-medium text-neutral-900 dark:text-neutral-100">
                     {locale.toUpperCase()}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="text-neutral-600 dark:text-neutral-400">
-                    Date
-                  </dt>
+                  <dt className="text-neutral-600 dark:text-neutral-400">Date</dt>
                   <dd className="font-medium text-neutral-900 dark:text-neutral-100">
                     {formatDate(meta.date, locale)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="text-neutral-600 dark:text-neutral-400">
-                    Reading
-                  </dt>
+                  <dt className="text-neutral-600 dark:text-neutral-400">Reading</dt>
                   <dd className="font-medium text-neutral-900 dark:text-neutral-100">
                     {meta.readingTime} min
                   </dd>
                 </div>
               </dl>
-
-              <div className="mt-6 flex flex-wrap gap-2">
-                <a
-                  className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    meta.title,
-                  )}&url=${encodeURIComponent(postUrl)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Share on X
-                </a>
-                <a
-                  className="text-xs underline text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                    postUrl,
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Share on LinkedIn
-                </a>
-              </div>
             </div>
           </aside>
         </section>
