@@ -7,6 +7,14 @@ import { motion } from 'framer-motion'
 
 const SUPPORTED_LOCALES = ['ko', 'en', 'uz'] as const
 
+type LocaleCode = (typeof SUPPORTED_LOCALES)[number]
+
+const LOCALE_LABELS: Record<LocaleCode, string> = {
+  ko: 'Korean',
+  en: 'English',
+  uz: 'Uzbek'
+}
+
 function formatSegmentLabel(segment: string) {
   return segment
     .split(/[-_]+/)
@@ -14,8 +22,6 @@ function formatSegmentLabel(segment: string) {
     .map((chunk) => chunk[0]?.toUpperCase() + chunk.slice(1))
     .join(' ')
 }
-
-type LocaleCode = (typeof SUPPORTED_LOCALES)[number]
 
 export default function Header() {
   const pathname = usePathname()
@@ -71,6 +77,12 @@ export default function Header() {
             <ThemeToggle />
             <LocaleSwitcher />
           </nav>
+        </div>
+
+        <div className="mx-auto w-full max-w-5xl px-6 py-2 text-xs uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-400">
+          <p className="text-xs lg:text-sm">
+            Browse articles in {LOCALE_LABELS[locale]} and switch anytime with the buttons above.
+          </p>
         </div>
 
         {breadcrumbs.length > 1 && (
