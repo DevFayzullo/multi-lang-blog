@@ -5,10 +5,42 @@ import ThemeToggle from './ThemeToggle'
 import LocaleSwitcher from './LocaleSwitcher'
 import { motion } from 'framer-motion'
 
+const SUPPORTED_LOCALES = ['ko', 'en', 'uz'] as const
+
+function formatSegmentLabel(segment: string) {
+  return segment
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((chunk) => chunk[0]?.toUpperCase() + chunk.slice(1))
+    .join(' ')
+}
+
+type LocaleCode = (typeof SUPPORTED_LOCALES)[number]
+
 export default function Header() {
   const pathname = usePathname()
   const parts = pathname.split('/').filter(Boolean)
-  const locale = ['ko','en','uz'].includes(parts[0]) ? parts[0] : 'ko'
+  const locale = SUPPORTED_LOCALES.includes(parts[0] as LocaleCode)
+    ? (parts[0] as LocaleCode)
+    : SUPPORTED_LOCALES[0]
+
+  const restParts = parts.slice(1)
+  const breadcrumbs = (() => {
+    const crumbs = [{ label: 'Home', href: `/${locale}` }]
+
+    if (restParts[0] === 'blog') {
+      crumbs.push({ label: 'Blog', href: `/${locale}/blog` })
+
+      if (restParts[1]) {
+        crumbs.push({
+          label: formatSegmentLabel(restParts[1]),
+          href: pathname,
+        })
+      }
+    }
+
+    return crumbs
+  })()
 
   return (
     <div className="sticky top-0 z-50">
@@ -40,6 +72,36 @@ export default function Header() {
             <LocaleSwitcher />
           </nav>
         </div>
+
+        {breadcrumbs.length > 1 && (
+          <nav
+            aria-label="Breadcrumb"
+            className="border-t border-neutral-200/30 dark:border-neutral-800/30 px-6 py-2 text-xs tracking-wide text-neutral-600 dark:text-neutral-400"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              {breadcrumbs.map((crumb, index) => {
+                const isLast = index === breadcrumbs.length - 1
+                return (
+                  <span key={`${crumb.label}-${index}`} className="inline-flex items-center gap-1">
+                    {isLast ? (
+                      <span aria-current="page" className="font-semibold text-neutral-900 dark:text-neutral-50">
+                        {crumb.label}
+                      </span>
+                    ) : (
+                      <Link
+                        href={crumb.href}
+                        className="transition hover:text-neutral-900 dark:hover:text-neutral-100"
+                      >
+                        {crumb.label}
+                      </Link>
+                    )}
+                    {index < breadcrumbs.length - 1 && <span aria-hidden="true">/</span>}
+                  </span>
+                )
+              })}
+            </div>
+          </nav>
+        )}
       </motion.header>
     </div>
   )
