@@ -19,11 +19,21 @@ export default function Header() {
         className="border-b border-neutral-200/50 dark:border-neutral-800/50 bg-white/50 dark:bg-neutral-950/40 backdrop-blur supports-backdrop-filter:bg-white/40 dark:supports-backdrop-filter:bg-neutral-950/30"
       >
         <div className="mx-auto w-full max-w-5xl px-6 flex items-center justify-between py-3">
-          <Link href={`/${locale}`} className="font-semibold tracking-tight text-lg">
-            <span className="mr-2">🌐</span> Multi-Lang Blog
+          <Link
+            href={`/${locale}`}
+            className="font-semibold tracking-tight text-lg flex items-center gap-2"
+            aria-label="Go to multilingual blog home"
+          >
+            <span className="sr-only">Home</span>
+            <span aria-hidden="true">🌐</span>
+            <span>Multi-Lang Blog</span>
           </Link>
           <nav className="flex items-center gap-3 text-sm">
-            <Link href={`/${locale}/blog`} className="px-2 py-1 rounded hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60 transition">
+            <Link
+              href={`/${locale}/blog`}
+              className="px-2 py-1 rounded hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60 transition"
+              aria-label="View the blog index"
+            >
               Blog
             </Link>
             <ThemeToggle />
